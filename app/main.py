@@ -6,6 +6,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, File, Request, UploadFile, HTTPException, Form
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from pymongo import MongoClient
+from bson import json_util
+import json
 
 app = FastAPI()
 load_dotenv()
@@ -47,14 +49,19 @@ def read_root():
     return RedirectResponse(url="/docs")
 
 
-@app.get("/test")
-def read_root():
+@app.get("/all")
+def get_all():
     
     try:
         DATABASE_URL = os.getenv('DATABASE_URL')
         client = MongoClient(DATABASE_URL)
         db = client[os.getenv("DATABASE_NAME")]
-        return db.list_collection_names()
+        firstCollection = db.list_collection_names()[0]
+        collection = db[firstCollection]
+        documents = collection.find()
+        # documents_list = list(documents)  # Convert cursor to list
+        # documents_json = json_util.dumps(documents_list)  # Convert to JSON
+        return documents
     except Exception as e:
-        return ('Connection failed!', e)    
+        return {'message': 'Connection failed!', 'error': str(e)}
     
